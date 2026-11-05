@@ -1,58 +1,265 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sistema de Inventario Multicanal con Laravel
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema de gestión de inventario desarrollado con **Laravel y PHP**, que integra diferentes tecnologías de comunicación mediante APIs REST, GraphQL, WebSockets y gRPC.
 
-## About Laravel
+El proyecto permite administrar productos, consultar información, actualizar existencias y transmitir cambios en tiempo real, utilizando una arquitectura basada en servicios compartidos.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Tecnologías utilizadas
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **PHP y Laravel:** desarrollo del backend.
+- **REST API:** operaciones CRUD sobre productos.
+- **GraphQL (Lighthouse):** consultas y mutaciones personalizadas.
+- **WebSockets (Laravel Reverb):** comunicación en tiempo real.
+- **gRPC:** comunicación mediante Protocol Buffers.
+- **Node.js:** implementación del servidor gRPC.
+- **Python:** cliente gRPC de prueba.
+- **SQLite / MySQL:** persistencia de datos.
+- **JavaScript y Blade:** interfaz de inventario.
+- **Composer y npm:** administración de dependencias.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Funcionalidades principales
 
-## Learning Laravel
+### API REST
+Permite gestionar productos mediante operaciones HTTP:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/api/productos` | Listar productos |
+| GET | `/api/productos/{id}` | Consultar un producto |
+| POST | `/api/productos` | Crear un producto |
+| PUT/PATCH | `/api/productos/{id}` | Actualizar un producto |
+| DELETE | `/api/productos/{id}` | Eliminar un producto |
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### GraphQL
+Permite realizar consultas y mutaciones mediante el endpoint `/graphql`.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+Operaciones disponibles:
+- `productos`: consultar todos los productos.
+- `producto`: consultar un producto por ID.
+- `crearProducto`: registrar un nuevo producto.
+- `actualizarStock`: modificar las existencias.
 
-## Agentic Development
+### WebSockets con Laravel Reverb
+Implementa comunicación en tiempo real mediante eventos.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Cuando se crea o actualiza un producto, se emite el evento `ProductoActualizado`, que puede ser recibido por los clientes conectados al canal `inventario`.
 
-```bash
-composer require laravel/boost --dev
+La interfaz de demostración está disponible en `/inventario`.
 
-php artisan boost:install
+### gRPC
+Implementa un servicio gRPC con Node.js para consultar productos registrados en Laravel.
+
+El contrato se define en `grpc/producto.proto` y proporciona la operación `ObtenerProducto`.
+
+Incluye clientes de prueba desarrollados en Node.js y Python.
+
+## Arquitectura del proyecto
+
+La lógica de negocio se centraliza en `ProductoService`, permitiendo que REST y GraphQL reutilicen las mismas operaciones.
+
+```text
+Clientes REST ──────┐
+                    ├── ProductoService
+Clientes GraphQL ───┘         │
+                              ├── Eloquent / Base de datos
+                              │
+                              └── ProductoActualizado
+                                         │
+                                   Laravel Reverb
+                                         │
+                                  Clientes WebSocket
+
+Cliente gRPC
+     │
+Servidor Node.js
+     │
+Endpoint interno protegido
+     │
+Laravel / Eloquent
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Instalación y configuración
 
-## Contributing
+### Requisitos
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- PHP y Composer compatibles con la versión de Laravel instalada.
+- Node.js y npm.
+- SQLite o MySQL.
+- Python 3 para ejecutar el cliente gRPC opcional.
+- Git.
 
-## Code of Conduct
+### 1. Clonar el repositorio
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+git clone https://github.com/RivLaura/inventario-api.git
+cd inventario-api
+```
 
-## Security Vulnerabilities
+### 2. Instalar dependencias
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+composer install
+npm install
+```
 
-## License
+### 3. Configurar Laravel
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Crear el archivo de entorno a partir del ejemplo:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Generar la clave de la aplicación:
+
+```bash
+php artisan key:generate
+```
+
+Configurar la conexión a la base de datos en `.env`.
+
+Para SQLite:
+
+```env
+DB_CONNECTION=sqlite
+```
+
+Crear el archivo `database/database.sqlite` si todavía no existe.
+
+### 4. Ejecutar migraciones
+
+```bash
+php artisan migrate
+```
+
+### 5. Configurar la comunicación gRPC
+
+Agregar una clave privada local en `.env`:
+
+```env
+GRPC_INTERNAL_KEY=una-clave-local-privada
+```
+
+Configurar la misma clave como variable de entorno del proceso Node.js que ejecuta el servidor gRPC.
+
+No publicar claves reales en el repositorio.
+
+### 6. Ejecutar los servicios
+
+Abrir terminales independientes en la raíz del proyecto:
+
+**Terminal 1 — Laravel**
+
+```bash
+php artisan serve
+```
+
+**Terminal 2 — Reverb**
+
+```bash
+php artisan reverb:start
+```
+
+**Terminal 3 — Trabajador de colas**
+
+```bash
+php artisan queue:work
+```
+
+**Terminal 4 — Vite**
+
+```bash
+npm run dev
+```
+
+**Terminal 5 — gRPC (PowerShell)**
+
+```powershell
+cd grpc
+npm install
+$env:GRPC_INTERNAL_KEY='una-clave-local-privada'
+node server.cjs
+```
+
+## Ejemplos de uso
+
+### Crear un producto con REST
+
+```http
+POST /api/productos
+Content-Type: application/json
+Accept: application/json
+```
+
+```json
+{
+  "nombre": "Teclado",
+  "precio": 25000,
+  "stock": 12
+}
+```
+
+### Consultar productos con GraphQL
+
+```graphql
+query {
+  productos {
+    id
+    nombre
+    precio
+    stock
+  }
+}
+```
+
+### Actualizar stock con GraphQL
+
+```graphql
+mutation {
+  actualizarStock(id: 1, stock: 15) {
+    id
+    nombre
+    stock
+  }
+}
+```
+
+### Probar el cliente gRPC
+
+Con Laravel y el servidor gRPC en ejecución, abrir otra terminal dentro de `grpc/`:
+
+```bash
+node client.cjs
+```
+
+Para utilizar el cliente Python, instalar `grpcio` y `grpcio-tools`, generar los archivos necesarios a partir de `producto.proto` y ejecutar:
+
+```bash
+python client.py
+```
+
+## Pruebas del inventario en tiempo real
+
+1. Iniciar Laravel, Reverb, el trabajador de colas y Vite.
+2. Abrir `http://127.0.0.1:8000/inventario` en dos pestañas.
+3. Crear un producto mediante REST o GraphQL si todavía no existe ninguno.
+4. Presionar el botón para incrementar el stock.
+5. Verificar que ambas pestañas reflejen la actualización.
+
+## Consideraciones
+
+Este proyecto fue desarrollado con fines académicos y de aprendizaje.
+
+La configuración está orientada a un entorno local. Para utilizarlo en producción sería necesario reforzar la autenticación, la protección de canales, el manejo de concurrencia del stock y la seguridad de las comunicaciones.
+
+## Autoría
+
+**María Laura Riveros**
+
+Estudiante de Tecnicatura Universitaria en Programación.
+
+GitHub: [RivLaura](https://github.com/RivLaura)
+
+## Propósito académico
+
+Proyecto práctico orientado a comprender e implementar diferentes mecanismos de comunicación entre aplicaciones, reutilización de lógica de negocio, persistencia de información y sincronización en tiempo real.
